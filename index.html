@@ -232,7 +232,7 @@
             <p>Your involvement makes a big difference in our young athletes' experience. We likely only need one parent there, but we're providing two slots for backup reasons. Thank you for volunteering!</p>
         </div>
 
-        <form id="signupForm">
+        <form id="signupForm" method="POST">
             <h2>Sign Up to Volunteer</h2>
             <label for="name">Your Name:</label>
             <input type="text" id="name" required placeholder="Enter your full name">
@@ -275,15 +275,55 @@
 
     <script>
         // Replace with your Google Apps Script web app URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKte5Pz6SBgh9tsyyKdxylSCXxkA8o-Cgtew9KU8KU7Ji0sL5A4SWO5N5sz0wXJ8hZtA/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxUoLQujUNolxo_eNXF6N2ohTvhFm0NaovfH90218EfJdJwYXnhOc3rDC-QH8xCU0sn4g/exec';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('signupForm');
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault(); // Prevent default form submission
+                    console.log('Form submission intercepted');
+
+                    const name = document.getElementById('name').value;
+                    const date = document.getElementById('date').value;
+                    console.log(`Attempting to sign up ${name} for ${date}`);
+
+                    try {
+                        const result = await addSignup(date, name);
+                        console.log('Signup result:', result);
+
+                        if (result === 'Success') {
+                            alert(`Thank you for volunteering, ${name}! You have been successfully signed up.`);
+                            await updateScheduleDisplay();
+                            this.reset();
+                        } else if (result === 'Date full') {
+                            alert('We appreciate your willingness to help, but this date already has two volunteers. Please choose another date.');
+                        } else {
+                            alert('An error occurred. Please try again or contact the coordinator.');
+                        }
+                    } catch (error) {
+                        console.error('Error during signup:', error);
+                        alert('An error occurred. Please try again or contact the coordinator.');
+                    }
+                });
+            } else {
+                console.error('Signup form not found');
+            }
+
+            updateScheduleDisplay();
+        });
 
         async function getSchedule() {
             try {
+                console.log('Fetching schedule...');
                 const response = await fetch(`${SCRIPT_URL}?action=getSchedule`);
+                console.log('Schedule response status:', response.status);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                return await response.json();
+                const data = await response.json();
+                console.log('Schedule data received:', data);
+                return data;
             } catch (error) {
                 console.error('Error fetching schedule:', error);
                 showError(`Unable to fetch the current schedule. Error: ${error.message}`);
@@ -292,17 +332,12 @@
         }
 
         async function addSignup(date, name) {
-            try {
-                const response = await fetch(`${SCRIPT_URL}?action=addSignup&date=${date}&name=${name}`, {method: 'POST'});
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return await response.text();
-            } catch (error) {
-                console.error('Error adding signup:', error);
-                showError(`Unable to process your signup. Error: ${error.message}`);
-                return 'Error';
-            }
+            console.log(`Sending signup request for ${name} on ${date}`);
+            const response = await fetch(`${SCRIPT_URL}?action=addSignup&date=${date}&name=${name}`, {method: 'POST'});
+            console.log('Signup response status:', response.status);
+            const text = await response.text();
+            console.log('Signup response text:', text);
+            return text;
         }
 
         async function updateScheduleDisplay() {
@@ -320,49 +355,11 @@
                     `;
                     scheduleBody.appendChild(row);
                 }
+            } else {
+                console.error('Schedule body element not found');
             }
         }
 
         function generateICS(name, date) {
             const eventDate = new Date(date + 'T15:30:00'); // 3:30 PM
             const endDate = new Date(date + 'T16:20:00');   // 4:20 PM
-            
-            const icsContent = 
-`BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-DTSTART:${formatDate(eventDate)}
-DTEND:${formatDate(endDate)}
-SUMMARY:Soccer Practice Volunteer Shift
-DESCRIPTION:Thank you for volunteering! Remember to meet at the school's main entrance at 3:25 PM.
-LOCATION:School Main Entrance
-END:VEVENT
-END:VCALENDAR`;
-
-            return icsContent;
-        }
-
-        function formatDate(date) {
-            return date.toISOString().replace(/-|:|\.\d+/g, '');
-        }
-
-        function downloadICS(name, date) {
-            const icsContent = generateICS(name, date);
-            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'soccer_volunteer_shift.ics';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function showError(message) {
-            const errorMessage = document.getElementById('errorMessage');
-            if (errorMessage) {
-                errorMessage.textContent = message;
-                errorMessage.style.display = 'block';
-            }
-        }
-
-        function init
