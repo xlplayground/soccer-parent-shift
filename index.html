@@ -275,7 +275,7 @@
 
     <script>
         // Replace with your Google Apps Script web app URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxUoLQujUNolxo_eNXF6N2ohTvhFm0NaovfH90218EfJdJwYXnhOc3rDC-QH8xCU0sn4g/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxiLzaMgfJnsyPEc13LljuSiRCBGgzWHGM7orWA3JRnO-LWLM8pUajgGM0P3R0WJna1aQ/exec';
 
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('signupForm');
@@ -331,13 +331,13 @@
             }
         }
 
-        async function addSignup(date, name) {
-            console.log(`Sending signup request for ${name} on ${date}`);
-            const response = await fetch(`${SCRIPT_URL}?action=addSignup&date=${date}&name=${name}`, {method: 'POST'});
-            console.log('Signup response status:', response.status);
-            const text = await response.text();
-            console.log('Signup response text:', text);
-            return text;
+       async function addSignup(date, name) {
+  console.log(`Sending signup request for ${name} on ${date}`);
+  const response = await fetch(`${SCRIPT_URL}?action=addSignup&date=${date}&name=${name}`);
+  console.log('Signup response status:', response.status);
+  const text = await response.text();
+  console.log('Signup response text:', text);
+  return text;
         }
 
         async function updateScheduleDisplay() {
